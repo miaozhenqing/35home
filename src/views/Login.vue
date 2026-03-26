@@ -39,9 +39,32 @@ export default {
     handleLogin() {
       // 登录逻辑
       console.log('登录表单提交:', this.form);
-      // 模拟登录成功
-      alert('登录成功！');
-      this.$router.push('/');
+      
+      // 调用后端API进行登录
+      fetch('http://localhost:8000/api/user/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.form)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.code === 'SUCCESS') {
+          // 登录成功，保存用户信息到localStorage
+          localStorage.setItem('user', JSON.stringify(data.respBody.user));
+          localStorage.setItem('token', data.respBody.token);
+          alert('登录成功！');
+          this.$router.push('/');
+        } else {
+          // 登录失败，显示错误信息
+          alert(data.msg);
+        }
+      })
+      .catch(error => {
+        console.error('登录失败:', error);
+        alert('登录失败，请稍后重试');
+      });
     }
   }
 }

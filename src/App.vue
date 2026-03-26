@@ -29,7 +29,7 @@
         <div class="footer-content">
           <div class="footer-section">
             <h3>关于我们</h3>
-            <p>35Home是一个专注于35岁左右中年男性压力管理的平台，致力于为用户提供专业的压力解决方案和支持。</p>
+            <p>35Home。</p>
           </div>
           <div class="footer-section">
             <h3>快速链接</h3>

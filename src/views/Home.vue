@@ -3,10 +3,11 @@
     <!-- 投票区 -->
     <section class="hero">
       <div class="container">
-        <p>轻松交流，分享生活，一起面对中年的挑战</p>
+        <h1>平台</h1>
+        <p>数据</p>
         <div class="poll-container">
-          <h2>当前热门话题</h2>
-          <p class="poll-question">你目前的就业状态是？</p>
+          <h2>投票</h2>
+          <p class="poll-question">状态是？</p>
           <div class="poll-vs">
             <div 
               class="poll-circle-container"
@@ -35,31 +36,49 @@
           <!-- 统计按钮 -->
           <div class="stats-section">
             <button class="stats-btn" @click="toggleStats">
-              <span>统计</span>
-              <span class="stats-arrow" :class="{ rotated: showStats }">▼</span>
+              <span>失业统计</span>
+              <span class="stats-arrow" :class="{ rotated: showStats }">&#9660;</span>
             </button>
             <div class="stats-dropdown" v-if="showStats">
-              <h4>失业统计</h4>
-              <div class="stats-grid">
-                <div class="stats-item">
-                  <h5>按城市</h5>
-                  <ul>
-                    <li>北京: 12人</li>
-                    <li>上海: 18人</li>
-                    <li>广州: 8人</li>
-                    <li>深圳: 10人</li>
-                    <li>其他: 5人</li>
-                  </ul>
+              <h4>失业统计分析</h4>
+              
+              <!-- 城市统计 -->
+              <div class="stats-item">
+                <h5>按城市</h5>
+                <div class="chart-container">
+                  <canvas ref="cityChart"></canvas>
                 </div>
-                <div class="stats-item">
-                  <h5>按行业</h5>
-                  <ul>
-                    <li>互联网: 25人</li>
-                    <li>金融: 8人</li>
-                    <li>制造业: 6人</li>
-                    <li>教育: 3人</li>
-                    <li>其他: 3人</li>
-                  </ul>
+              </div>
+              
+              <!-- 行业统计 -->
+              <div class="stats-item">
+                <h5>按行业</h5>
+                <div class="chart-container">
+                  <canvas ref="industryChart"></canvas>
+                </div>
+              </div>
+              
+              <!-- 职业统计 -->
+              <div class="stats-item">
+                <h5>按职业</h5>
+                <div class="chart-container">
+                  <canvas ref="occupationChart"></canvas>
+                </div>
+              </div>
+              
+              <!-- 年龄统计 -->
+              <div class="stats-item">
+                <h5>按年龄</h5>
+                <div class="chart-container">
+                  <canvas ref="ageChart"></canvas>
+                </div>
+              </div>
+              
+              <!-- 性别统计 -->
+              <div class="stats-item">
+                <h5>按性别</h5>
+                <div class="chart-container">
+                  <canvas ref="genderChart"></canvas>
                 </div>
               </div>
             </div>
@@ -67,50 +86,51 @@
         </div>
       </div>
     </section>
-
-    <!-- 内容预览 -->
-    <section class="content-preview">
-      <div class="container">
-        <h2>热门内容</h2>
-        <div class="content-grid">
-          <div class="content-item">
-            <div class="content-img"></div>
-            <h3>如何平衡工作与生活</h3>
-            <p>35岁是事业的关键期，如何在追求成功的同时保持生活的平衡？</p>
-            <router-link to="/content" class="btn-link">阅读更多</router-link>
-          </div>
-          <div class="content-item">
-            <div class="content-img"></div>
-            <h3>中年情感管理</h3>
-            <p>面对家庭、婚姻和社交关系的挑战，如何保持健康的情感状态？</p>
-            <router-link to="/content" class="btn-link">阅读更多</router-link>
-          </div>
-          <div class="content-item">
-            <div class="content-img"></div>
-            <h3>健康管理策略</h3>
-            <p>35岁后，如何关注自己的身体健康，预防亚健康状态？</p>
-            <router-link to="/content" class="btn-link">阅读更多</router-link>
-          </div>
-        </div>
-      </div>
-    </section>
-
-
   </div>
 </template>
 
 <script>
+import Chart from 'chart.js/auto';
+
 export default {
   name: 'Home',
   data() {
     return {
       pollResults: {
-        employed: 128,
-        unemployed: 45
+        employed: 0,
+        unemployed: 0
       },
       selectedOption: null,
       voted: false,
-      showStats: false
+      showStats: false,
+      charts: {},
+      // 失业统计数据
+      unemploymentData: {
+        cities: {
+          labels: [],
+          data: []
+        },
+        industries: {
+          labels: [],
+          data: []
+        },
+        occupations: {
+          labels: [],
+          data: []
+        },
+        ages: {
+          labels: [],
+          data: []
+        },
+        genders: {
+          labels: [],
+          data: []
+        }
+      },
+      // 登录状态
+      isLoggedIn: false,
+      // 用户信息
+      user: null
     }
   },
   computed: {
@@ -126,24 +146,329 @@ export default {
       return Math.round((this.pollResults.unemployed / this.totalVotes) * 100);
     }
   },
+  mounted() {
+    // 组件挂载时获取统计数据
+    this.getVoteStats();
+    
+    // 检查登录状态
+    this.checkLoginStatus();
+  },
   methods: {
     toggleStats() {
       this.showStats = !this.showStats;
+      if (this.showStats) {
+        this.$nextTick(() => {
+          this.initCharts();
+        });
+      }
     },
+    // 检查登录状态
+    checkLoginStatus() {
+      // 实际项目中应该从localStorage或store中获取
+      const user = localStorage.getItem('user');
+      if (user) {
+        this.isLoggedIn = true;
+        this.user = JSON.parse(user);
+      }
+    },
+    // 获取投票统计数据
+    getVoteStats() {
+      fetch('http://localhost:8000/api/vote/stats')
+        .then(response => response.json())
+        .then(data => {
+          if (data.code === 'SUCCESS') {
+            const stats = data.respBody;
+            this.pollResults.employed = stats.employedCount;
+            this.pollResults.unemployed = stats.unemployedCount;
+            
+            // 处理城市统计数据
+            this.unemploymentData.cities.labels = Object.keys(stats.cityStats);
+            this.unemploymentData.cities.data = Object.values(stats.cityStats);
+            
+            // 处理行业统计数据
+            this.unemploymentData.industries.labels = Object.keys(stats.industryStats);
+            this.unemploymentData.industries.data = Object.values(stats.industryStats);
+            
+            // 处理职业统计数据
+            this.unemploymentData.occupations.labels = Object.keys(stats.occupationStats);
+            this.unemploymentData.occupations.data = Object.values(stats.occupationStats);
+            
+            // 处理年龄统计数据
+            this.unemploymentData.ages.labels = Object.keys(stats.ageStats);
+            this.unemploymentData.ages.data = Object.values(stats.ageStats);
+            
+            // 处理性别统计数据
+            this.unemploymentData.genders.labels = Object.keys(stats.genderStats);
+            this.unemploymentData.genders.data = Object.values(stats.genderStats);
+            
+            // 如果统计面板是打开的，重新初始化图表
+            if (this.showStats) {
+              this.$nextTick(() => {
+                this.initCharts();
+              });
+            }
+          }
+        })
+        .catch(error => {
+          console.error('获取统计数据失败:', error);
+        });
+    },
+    // 提交投票
     vote(option) {
       if (this.voted) return;
       
-      this.selectedOption = option;
-      this.pollResults[option]++;
-      this.voted = true;
-      
-      // 模拟登录状态检查
-      const isLoggedIn = false; // 实际项目中应该从用户状态中获取
-      if (!isLoggedIn) {
+      // 检查登录状态
+      if (!this.isLoggedIn) {
         alert('请登录后再投票');
-        this.selectedOption = null;
-        this.pollResults[option]--;
-        this.voted = false;
+        return;
+      }
+      
+      // 准备投票数据
+      const voteData = {
+        status: option,
+        city: '北京', // 实际项目中应该从用户信息或表单中获取
+        industry: '互联网', // 实际项目中应该从用户信息或表单中获取
+        occupation: '技术岗', // 实际项目中应该从用户信息或表单中获取
+        age: 35, // 实际项目中应该从用户信息或表单中获取
+        gender: 'male' // 实际项目中应该从用户信息或表单中获取
+      };
+      
+      // 提交投票
+      fetch('http://localhost:8000/api/vote/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(voteData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.code === 'SUCCESS') {
+          // 投票成功，更新本地数据
+          this.selectedOption = option;
+          this.pollResults[option]++;
+          this.voted = true;
+          // 重新获取统计数据
+          this.getVoteStats();
+        } else {
+          // 投票失败，显示错误信息
+          alert(data.msg);
+        }
+      })
+      .catch(error => {
+        console.error('投票失败:', error);
+        alert('投票失败，请稍后重试');
+      });
+    },
+    initCharts() {
+      // 销毁旧图表
+      Object.values(this.charts).forEach(chart => {
+        if (chart) chart.destroy();
+      });
+      
+      // 初始化城市图表
+      if (this.$refs.cityChart) {
+        this.charts.cityChart = new Chart(this.$refs.cityChart, {
+          type: 'bar',
+          data: {
+            labels: this.unemploymentData.cities.labels,
+            datasets: [{
+              label: '失业人数',
+              data: this.unemploymentData.cities.data,
+              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: '#ddd'
+                },
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                }
+              },
+              x: {
+                ticks: {
+                  color: '#ddd'
+                },
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#ddd'
+                }
+              }
+            }
+          }
+        });
+      }
+      
+      // 初始化行业图表
+      if (this.$refs.industryChart) {
+        this.charts.industryChart = new Chart(this.$refs.industryChart, {
+          type: 'pie',
+          data: {
+            labels: this.unemploymentData.industries.labels,
+            datasets: [{
+              data: this.unemploymentData.industries.data,
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)'
+              ],
+              borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#ddd'
+                }
+              }
+            }
+          }
+        });
+      }
+      
+      // 初始化职业图表
+      if (this.$refs.occupationChart) {
+        this.charts.occupationChart = new Chart(this.$refs.occupationChart, {
+          type: 'doughnut',
+          data: {
+            labels: this.unemploymentData.occupations.labels,
+            datasets: [{
+              data: this.unemploymentData.occupations.data,
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)'
+              ],
+              borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#ddd'
+                }
+              }
+            }
+          }
+        });
+      }
+      
+      // 初始化年龄图表
+      if (this.$refs.ageChart) {
+        this.charts.ageChart = new Chart(this.$refs.ageChart, {
+          type: 'bar',
+          data: {
+            labels: this.unemploymentData.ages.labels,
+            datasets: [{
+              label: '失业人数',
+              data: this.unemploymentData.ages.data,
+              backgroundColor: 'rgba(255, 206, 86, 0.6)',
+              borderColor: 'rgba(255, 206, 86, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: '#ddd'
+                },
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                }
+              },
+              x: {
+                ticks: {
+                  color: '#ddd'
+                },
+                grid: {
+                  color: 'rgba(255, 255, 255, 0.1)'
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#ddd'
+                }
+              }
+            }
+          }
+        });
+      }
+      
+      // 初始化性别图表
+      if (this.$refs.genderChart) {
+        this.charts.genderChart = new Chart(this.$refs.genderChart, {
+          type: 'pie',
+          data: {
+            labels: this.unemploymentData.genders.labels,
+            datasets: [{
+              data: this.unemploymentData.genders.data,
+              backgroundColor: [
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 99, 132, 0.6)'
+              ],
+              borderColor: [
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 99, 132, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#ddd'
+                }
+              }
+            }
+          }
+        });
       }
     }
   }
@@ -330,33 +655,31 @@ export default {
 
 .stats-dropdown h4 {
   font-size: 18px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   color: #3498db;
+  text-align: center;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+.stats-item {
+  margin-bottom: 30px;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
 }
 
 .stats-item h5 {
   font-size: 16px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: #fff;
+  text-align: center;
 }
 
-.stats-item ul {
-  list-style: none;
-  padding: 0;
-}
-
-.stats-item li {
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: #ddd;
-  display: flex;
-  justify-content: space-between;
+/* 图表容器 */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 

@@ -5,8 +5,8 @@
         <h1>注册</h1>
         <form @submit.prevent="handleRegister">
           <div class="form-group">
-            <label for="name">姓名</label>
-            <input type="text" id="name" v-model="form.name" required>
+            <label for="username">用户名</label>
+            <input type="text" id="username" v-model="form.username" required>
           </div>
           <div class="form-group">
             <label for="email">邮箱</label>
@@ -19,6 +19,26 @@
           <div class="form-group">
             <label for="confirmPassword">确认密码</label>
             <input type="password" id="confirmPassword" v-model="form.confirmPassword" required>
+          </div>
+          <div class="form-group">
+            <label for="gender">性别</label>
+            <select id="gender" v-model="form.gender" required>
+              <option value="">请选择</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="age">年龄</label>
+            <input type="number" id="age" v-model="form.age" required min="18" max="80">
+          </div>
+          <div class="form-group">
+            <label for="occupation">职业</label>
+            <input type="text" id="occupation" v-model="form.occupation" required>
+          </div>
+          <div class="form-group">
+            <label for="hobbies">爱好</label>
+            <input type="text" id="hobbies" v-model="form.hobbies" placeholder="请用逗号分隔多个爱好">
           </div>
           <div class="form-actions">
             <button type="submit" class="register-btn">注册</button>
@@ -38,10 +58,14 @@ export default {
   data() {
     return {
       form: {
-        name: '',
+        username: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        gender: '',
+        age: '',
+        occupation: '',
+        hobbies: ''
       }
     }
   },
@@ -55,9 +79,30 @@ export default {
       
       // 注册逻辑
       console.log('注册表单提交:', this.form);
-      // 模拟注册成功
-      alert('注册成功！');
-      this.$router.push('/login');
+      
+      // 调用后端API进行注册
+      fetch('http://localhost:8000/api/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.form)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.code === 'SUCCESS') {
+          // 注册成功
+          alert('注册成功！');
+          this.$router.push('/login');
+        } else {
+          // 注册失败，显示错误信息
+          alert(data.msg);
+        }
+      })
+      .catch(error => {
+        console.error('注册失败:', error);
+        alert('注册失败，请稍后重试');
+      });
     }
   }
 }

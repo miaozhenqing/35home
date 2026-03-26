@@ -28,6 +28,10 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
 
+	voteRepo := repository.NewVoteRepository(config.DB)
+	voteService := service.NewVoteService(voteRepo)
+	voteHandler := handler.NewVoteHandler(voteService)
+
 	// 创建Gin引擎
 	r := gin.Default()
 
@@ -60,6 +64,13 @@ func main() {
 		{
 			user.POST("/register", userHandler.Register)
 			user.POST("/login", userHandler.Login)
+		}
+
+		// 投票相关路由
+		vote := api.Group("/vote")
+		{
+			vote.POST("/submit", voteHandler.SubmitVote)
+			vote.GET("/stats", voteHandler.GetVoteStats)
 		}
 
 		// 压力测评相关路由

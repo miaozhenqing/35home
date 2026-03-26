@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"35home/common"
 	"35home/dto"
 	"35home/models"
 	"35home/repository"
@@ -27,18 +28,18 @@ func NewUserService(userRepo repository.UserRepository) UserService {
 func (s *userService) Register(req *dto.RegisterRequest) (*dto.RegisterResponse, error) {
 	// 验证密码是否一致
 	if req.Password != req.ConfirmPassword {
-		return nil, errors.New("passwords do not match")
+		return nil, errors.New(common.ErrorPasswordsDoNotMatch)
 	}
 
 	// 检查邮箱是否已存在
 	if s.userRepo.ExistsByEmail(req.Email) {
-		return nil, errors.New("email already registered")
+		return nil, errors.New(common.ErrorEmailAlreadyRegistered)
 	}
 
 	// 加密密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, errors.New("failed to hash password")
+		return nil, errors.New(common.ErrorFailedToHashPassword)
 	}
 
 	// 创建用户
@@ -53,12 +54,11 @@ func (s *userService) Register(req *dto.RegisterRequest) (*dto.RegisterResponse,
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
-		return nil, errors.New("failed to create user")
+		return nil, errors.New(common.ErrorFailedToCreateUser)
 	}
 
 	// 构建响应
 	response := &dto.RegisterResponse{
-		Message: "User registered successfully",
 		User: dto.UserResponse{
 			ID:         user.ID,
 			Username:   user.Username,
@@ -78,13 +78,13 @@ func (s *userService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
 	// 查找用户
 	user, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
-		return nil, errors.New("invalid email or password")
+		return nil, errors.New(common.ErrorInvalidEmailOrPassword)
 	}
 
 	// 验证密码
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
-		return nil, errors.New("invalid email or password")
+		return nil, errors.New(common.ErrorInvalidEmailOrPassword)
 	}
 
 	// 更新最后登录时间
@@ -96,16 +96,15 @@ func (s *userService) Login(req *dto.LoginRequest) (*dto.LoginResponse, error) {
 
 	// 构建响应
 	response := &dto.LoginResponse{
-		Message: "Login successful",
 		User: dto.UserResponse{
-			ID:         user.ID,
-			Username:   user.Username,
-			Email:      user.Email,
-			Gender:     user.Gender,
-			Age:        user.Age,
-			Occupation: user.Occupation,
-			Hobbies:    user.Hobbies,
-			CreatedAt:  user.CreatedAt,
+			ID:          user.ID,
+			Username:    user.Username,
+			Email:       user.Email,
+			Gender:      user.Gender,
+			Age:         user.Age,
+			Occupation:  user.Occupation,
+			Hobbies:     user.Hobbies,
+			CreatedAt:   user.CreatedAt,
 			LastLoginAt: loginTime,
 		},
 		Token: "dummy-token", // 实际项目中应该生成JWT token
