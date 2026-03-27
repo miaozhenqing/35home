@@ -1,7 +1,5 @@
 package dto
 
-import "time"
-
 type VoteRequest struct {
 	Status     string `json:"status" binding:"required,oneof=employed unemployed"`
 	City       string `json:"city" binding:"required"`
@@ -16,14 +14,14 @@ type VoteResponse struct {
 }
 
 type VoteInfo struct {
-	ID         uint      `json:"id"`
-	Status     string    `json:"status"`
-	City       string    `json:"city"`
-	Industry   string    `json:"industry"`
-	Occupation string    `json:"occupation"`
-	Age        int       `json:"age"`
-	Gender     string    `json:"gender"`
-	CreatedAt  time.Time `json:"createdAt"`
+	ID         uint64 `json:"id"`
+	Status     string `json:"status"`
+	City       string `json:"city"`
+	Industry   string `json:"industry"`
+	Occupation string `json:"occupation"`
+	Age        int    `json:"age"`
+	Gender     string `json:"gender"`
+	CreatedAt  int64  `json:"createdAt"`
 }
 
 type VoteStatsResponse struct {

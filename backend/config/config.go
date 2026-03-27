@@ -14,6 +14,7 @@ type Config struct {
 	DBName     string
 	JWTSecret  string
 	ServerPort string
+	APIBaseURL string
 }
 
 // LoadConfig 加载配置
@@ -24,8 +25,9 @@ func LoadConfig() *Config {
 		DBUser:     getEnv("DB_USER", "root"),
 		DBPassword: getEnv("DB_PASSWORD", "admin"),
 		DBName:     getEnv("DB_NAME", "testdb"),
-		JWTSecret:  getEnv("JWT_SECRET", "your-secret-key"),
-		ServerPort: getEnv("SERVER_PORT", "8000"),
+		JWTSecret:  getEnv("JWT_SECRET", "your-secret-key-for-jwt-token-generation"),
+		ServerPort: getEnv("SERVER_PORT", "9001"),
+		APIBaseURL: getEnv("API_BASE_URL", "http://localhost:9001/api"),
 	}
 }
 

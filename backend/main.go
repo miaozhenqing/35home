@@ -6,6 +6,7 @@ import (
 
 	"35home/config"
 	"35home/handler"
+	"35home/middleware"
 	"35home/repository"
 	"35home/service"
 
@@ -25,7 +26,7 @@ func main() {
 
 	// 初始化各层
 	userRepo := repository.NewUserRepository(config.DB)
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, cfg)
 	userHandler := handler.NewUserHandler(userService)
 
 	voteRepo := repository.NewVoteRepository(config.DB)
@@ -66,8 +67,9 @@ func main() {
 			user.POST("/login", userHandler.Login)
 		}
 
-		// 投票相关路由
+		// 投票相关路由（需要认证）
 		vote := api.Group("/vote")
+		vote.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 		{
 			vote.POST("/submit", voteHandler.SubmitVote)
 			vote.GET("/stats", voteHandler.GetVoteStats)

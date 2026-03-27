@@ -53,6 +53,8 @@
 </template>
 
 <script>
+import { buildApiUrl, API_ENDPOINTS } from '../api/config';
+
 export default {
   name: 'Register',
   data() {
@@ -81,7 +83,7 @@ export default {
       console.log('注册表单提交:', this.form);
       
       // 调用后端API进行注册
-      fetch('http://localhost:8000/api/user/register', {
+      fetch(buildApiUrl(API_ENDPOINTS.USER_REGISTER), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -90,10 +92,12 @@ export default {
       })
       .then(response => response.json())
       .then(data => {
-        if (data.code === 'SUCCESS') {
-          // 注册成功
-          alert('注册成功！');
-          this.$router.push('/login');
+        if (data.code === 0) {
+          // 注册成功，保存用户信息到localStorage
+          localStorage.setItem('user', JSON.stringify(data.respBody.user));
+          localStorage.setItem('token', data.respBody.token);
+          // 直接跳转到主页
+          this.$router.push('/');
         } else {
           // 注册失败，显示错误信息
           alert(data.msg);

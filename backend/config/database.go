@@ -27,6 +27,10 @@ func InitDatabase(config *Config) error {
 	DB.DB().SetMaxIdleConns(10)
 	DB.DB().SetMaxOpenConns(100)
 
+	// 开发环境中先删除表然后重新创建（仅用于开发）
+	DB.DropTableIfExists(&models.Vote{})
+	DB.DropTableIfExists(&models.User{})
+	
 	// 自动迁移表结构 todo 只在开发环境中使用，生产环境中不应该自动迁移
 	err = DB.AutoMigrate(&models.User{}, &models.Vote{}).Error
 	if err != nil {

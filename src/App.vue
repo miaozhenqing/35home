@@ -11,9 +11,13 @@
           <router-link to="/community" class="nav-item">社区</router-link>
           <router-link to="/test" class="nav-item">压力测评</router-link>
         </nav>
-        <div class="user">
+        <div class="user" v-if="!isLoggedIn">
           <router-link to="/login" class="user-item">登录</router-link>
           <router-link to="/register" class="user-item">注册</router-link>
+        </div>
+        <div class="user" v-else>
+          <span class="user-item welcome">欢迎，{{ user.username }}</span>
+          <button class="user-item logout-btn" @click="logout">登出</button>
         </div>
       </div>
     </header>
@@ -56,7 +60,40 @@
 
 <script>
 export default {
-  name: 'App'
+  name: 'App',
+  data() {
+    return {
+      isLoggedIn: false,
+      user: null
+    }
+  },
+  mounted() {
+    this.checkLoginStatus()
+    // 监听localStorage变化，更新登录状态
+    window.addEventListener('storage', this.checkLoginStatus)
+  },
+  beforeUnmount() {
+    window.removeEventListener('storage', this.checkLoginStatus)
+  },
+  methods: {
+    checkLoginStatus() {
+      const user = localStorage.getItem('user')
+      if (user) {
+        this.isLoggedIn = true
+        this.user = JSON.parse(user)
+      } else {
+        this.isLoggedIn = false
+        this.user = null
+      }
+    },
+    logout() {
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
+      this.isLoggedIn = false
+      this.user = null
+      this.$router.push('/login')
+    }
+  }
 }
 </script>
 
@@ -128,6 +165,27 @@ body {
 
 .user-item:hover {
   color: #3498db;
+}
+
+.user-item.welcome {
+  cursor: default;
+}
+
+.user-item.logout-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.user-item.logout-btn:hover {
+  background-color: #c0392b;
+  color: white;
 }
 
 /* 主内容区 */

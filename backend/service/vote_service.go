@@ -3,14 +3,13 @@ package service
 import (
 	"errors"
 
-	"35home/common"
 	"35home/dto"
 	"35home/models"
 	"35home/repository"
 )
 
 type VoteService interface {
-	SubmitVote(userID uint, req *dto.VoteRequest) (*dto.VoteResponse, error)
+	SubmitVote(userID uint64, req *dto.VoteRequest) (*dto.VoteResponse, error)
 	GetVoteStats() (*dto.VoteStatsResponse, error)
 }
 
@@ -22,11 +21,11 @@ func NewVoteService(voteRepo repository.VoteRepository) VoteService {
 	return &voteService{voteRepo: voteRepo}
 }
 
-func (s *voteService) SubmitVote(userID uint, req *dto.VoteRequest) (*dto.VoteResponse, error) {
+func (s *voteService) SubmitVote(userID uint64, req *dto.VoteRequest) (*dto.VoteResponse, error) {
 	// 检查用户是否已经投过票
 	existingVote, err := s.voteRepo.FindByUserID(userID)
 	if err == nil && existingVote != nil {
-		return nil, errors.New(common.ErrorUserAlreadyVoted)
+		return nil, errors.New("user has already voted")
 	}
 
 	// 创建新投票
@@ -41,7 +40,7 @@ func (s *voteService) SubmitVote(userID uint, req *dto.VoteRequest) (*dto.VoteRe
 	}
 
 	if err := s.voteRepo.Create(vote); err != nil {
-		return nil, errors.New(common.ErrorFailedToSubmitVote)
+		return nil, errors.New("failed to submit vote")
 	}
 
 	// 构建响应
@@ -65,49 +64,49 @@ func (s *voteService) GetVoteStats() (*dto.VoteStatsResponse, error) {
 	// 获取总投票数
 	totalVotes, err := s.voteRepo.TotalVotes()
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetTotalVotes)
+		return nil, errors.New("failed to get total votes")
 	}
 
 	// 获取工作状态投票数
 	employedCount, err := s.voteRepo.CountByStatus("employed")
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetEmployedCount)
+		return nil, errors.New("failed to get employed count")
 	}
 
 	// 获取失业状态投票数
 	unemployedCount, err := s.voteRepo.CountByStatus("unemployed")
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetUnemployedCount)
+		return nil, errors.New("failed to get unemployed count")
 	}
 
 	// 获取城市统计
 	cityStats, err := s.voteRepo.CountByCity()
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetCityStats)
+		return nil, errors.New("failed to get city stats")
 	}
 
 	// 获取行业统计
 	industryStats, err := s.voteRepo.CountByIndustry()
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetIndustryStats)
+		return nil, errors.New("failed to get industry stats")
 	}
 
 	// 获取职业统计
 	occupationStats, err := s.voteRepo.CountByOccupation()
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetOccupationStats)
+		return nil, errors.New("failed to get occupation stats")
 	}
 
 	// 获取年龄统计
 	ageStats, err := s.voteRepo.CountByAge()
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetAgeStats)
+		return nil, errors.New("failed to get age stats")
 	}
 
 	// 获取性别统计
 	genderStats, err := s.voteRepo.CountByGender()
 	if err != nil {
-		return nil, errors.New(common.ErrorFailedToGetGenderStats)
+		return nil, errors.New("failed to get gender stats")
 	}
 
 	// 构建响应

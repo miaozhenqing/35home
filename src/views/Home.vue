@@ -1,5 +1,11 @@
 <template>
   <div class="home">
+    <!-- 用户信息和登出 -->
+    <div class="user-info" v-if="isLoggedIn">
+      <span class="welcome-text">欢迎，{{ user.username }}</span>
+      <button class="logout-btn" @click="logout">登出</button>
+    </div>
+    
     <!-- 投票区 -->
     <section class="hero">
       <div class="container">
@@ -91,6 +97,7 @@
 
 <script>
 import Chart from 'chart.js/auto';
+import { buildApiUrl, API_ENDPOINTS } from '../api/config';
 
 export default {
   name: 'Home',
@@ -171,12 +178,35 @@ export default {
         this.user = JSON.parse(user);
       }
     },
+    
+    // 登出功能
+    logout() {
+      // 清除localStorage中的用户信息和token
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      // 更新登录状态
+      this.isLoggedIn = false;
+      this.user = null;
+      // 跳转到登录页面
+      this.$router.push('/login');
+    },
     // 获取投票统计数据
     getVoteStats() {
-      fetch('http://localhost:8000/api/vote/stats')
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      fetch(buildApiUrl(API_ENDPOINTS.VOTE_STATS), {
+        headers: headers
+      })
         .then(response => response.json())
         .then(data => {
-          if (data.code === 'SUCCESS') {
+          if (data.code === 0) {
             const stats = data.respBody;
             this.pollResults.employed = stats.employedCount;
             this.pollResults.unemployed = stats.unemployedCount;
@@ -234,16 +264,18 @@ export default {
       };
       
       // 提交投票
-      fetch('http://localhost:8000/api/vote/submit', {
+      const token = localStorage.getItem('token');
+      fetch(buildApiUrl(API_ENDPOINTS.VOTE_SUBMIT), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(voteData)
       })
       .then(response => response.json())
       .then(data => {
-        if (data.code === 'SUCCESS') {
+        if (data.code === 0) {
           // 投票成功，更新本地数据
           this.selectedOption = option;
           this.pollResults[option]++;
@@ -476,6 +508,36 @@ export default {
 </script>
 
 <style scoped>
+/* 用户信息和登出 */
+.user-info {
+  background-color: #f8f9fa;
+  padding: 10px 20px;
+  text-align: right;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.welcome-text {
+  margin-right: 20px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.logout-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.logout-btn:hover {
+  background-color: #c0392b;
+}
+
 /* 英雄区 */
 .hero {
   background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);

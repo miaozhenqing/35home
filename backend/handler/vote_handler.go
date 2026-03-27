@@ -24,54 +24,34 @@ func NewVoteHandler(voteService service.VoteService) VoteHandler {
 }
 
 func (h *voteHandler) SubmitVote(c *gin.Context) {
-	// 模拟用户ID，实际项目中应该从JWT token中获取
-	userID := uint(1)
+	// 从上下文中获取用户ID（由JWT中间件设置）
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, dto.NewErrorResponse(common.ErrInvalidRequest))
+		return
+	}
 
 	var req dto.VoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.Response{
-			Code: "INVALID_REQUEST",
-			Msg:  "Invalid request parameters",
-		})
+		c.JSON(http.StatusBadRequest, dto.NewErrorResponse(common.ErrInvalidRequest))
 		return
 	}
 
-	response, err := h.voteService.SubmitVote(userID, &req)
+	response, err := h.voteService.SubmitVote(userID.(uint64), &req)
 	if err != nil {
-		if err.Error() == common.ErrorUserAlreadyVoted {
-			c.JSON(http.StatusConflict, dto.Response{
-				Code: common.ErrorUserAlreadyVoted,
-				Msg:  common.ErrorMessages[common.ErrorUserAlreadyVoted],
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.Response{
-			Code: err.Error(),
-			Msg:  common.ErrorMessages[err.Error()],
-		})
+		c.JSON(http.StatusInternalServerError, dto.NewErrorResponse(common.ErrInternalServer))
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.Response{
-		Code:     "SUCCESS",
-		Msg:      "Vote submitted successfully",
-		RespBody: response,
-	})
+	c.JSON(http.StatusCreated, dto.NewSuccessResponse(response))
 }
 
 func (h *voteHandler) GetVoteStats(c *gin.Context) {
 	response, err := h.voteService.GetVoteStats()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.Response{
-			Code: err.Error(),
-			Msg:  common.ErrorMessages[err.Error()],
-		})
+		c.JSON(http.StatusInternalServerError, dto.NewErrorResponse(common.ErrInternalServer))
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.Response{
-		Code:     "SUCCESS",
-		Msg:      "Get vote stats successful",
-		RespBody: response,
-	})
+	c.JSON(http.StatusOK, dto.NewSuccessResponse(response))
 }

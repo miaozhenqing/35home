@@ -5,8 +5,8 @@
         <h1>登录</h1>
         <form @submit.prevent="handleLogin">
           <div class="form-group">
-            <label for="email">邮箱</label>
-            <input type="email" id="email" v-model="form.email" required>
+            <label for="username">用户名</label>
+            <input type="text" id="username" v-model="form.username" required>
           </div>
           <div class="form-group">
             <label for="password">密码</label>
@@ -25,12 +25,14 @@
 </template>
 
 <script>
+import { buildApiUrl, API_ENDPOINTS } from '../api/config';
+
 export default {
   name: 'Login',
   data() {
     return {
       form: {
-        email: '',
+        username: '',
         password: ''
       }
     }
@@ -41,7 +43,7 @@ export default {
       console.log('登录表单提交:', this.form);
       
       // 调用后端API进行登录
-      fetch('http://localhost:8000/api/user/login', {
+      fetch(buildApiUrl(API_ENDPOINTS.USER_LOGIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -50,11 +52,11 @@ export default {
       })
       .then(response => response.json())
       .then(data => {
-        if (data.code === 'SUCCESS') {
+        if (data.code === 0) {
           // 登录成功，保存用户信息到localStorage
           localStorage.setItem('user', JSON.stringify(data.respBody.user));
           localStorage.setItem('token', data.respBody.token);
-          alert('登录成功！');
+          // 直接跳转到主页，不显示成功提示
           this.$router.push('/');
         } else {
           // 登录失败，显示错误信息

@@ -8,7 +8,7 @@ import (
 
 type VoteRepository interface {
 	Create(vote *models.Vote) error
-	FindByUserID(userID uint) (*models.Vote, error)
+	FindByUserID(userID uint64) (*models.Vote, error)
 	CountByStatus(status string) (int, error)
 	CountByCity() (map[string]int, error)
 	CountByIndustry() (map[string]int, error)
@@ -30,7 +30,7 @@ func (r *voteRepository) Create(vote *models.Vote) error {
 	return r.db.Create(vote).Error
 }
 
-func (r *voteRepository) FindByUserID(userID uint) (*models.Vote, error) {
+func (r *voteRepository) FindByUserID(userID uint64) (*models.Vote, error) {
 	var vote models.Vote
 	err := r.db.Where("user_id = ?", userID).First(&vote).Error
 	if err != nil {
